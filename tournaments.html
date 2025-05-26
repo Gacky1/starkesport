@@ -1,0 +1,118 @@
+<!DOCTYPE  html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tournaments - Stark Esport</title>
+  <meta name="description" content="Browse upcoming, ongoing, and past esports tournaments hosted by Nexus Gaming.">
+  <meta property="og:title" content="Tournaments - Stark Esport">
+  <meta property="og:description" content="Browse upcoming, ongoing, and past esports tournaments hosted by Nexus Gaming.">
+  <meta property="og:image" content="https://imagedelivery.net/FIZL8110j4px64kO6qJxWA/26ecfcc0jbf76j4b63jaefej78d1929442db/public">
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:title" content="Tournaments - Stark Esport">
+  <meta property="twitter:description" content="Browse upcoming, ongoing, and past esports tournaments hosted by Nexus Gaming.">
+  <meta property="twitter:image" content="https://imagedelivery.net/FIZL8110j4px64kO6qJxWA/26ecfcc0jbf76j4b63jaefej78d1929442db/public">
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+</head>
+<body class="dark-theme">
+  <div class="glitch-overlay"></div>
+  
+  <header>
+    <div class="container">
+      <div class="logo">
+        <img src="assets/logo.svg" alt="Nexus Gaming">
+        <h1>NEXUS <span class="highlight">GAMING</span></h1>
+      </div>
+      <nav>
+        <div class="mobile-menu-toggle">
+          <i class="fas fa-bars"></i>
+        </div>
+        <ul class="nav-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="tournaments.html" class="active">Tournaments</a></li>
+          <li><a href="contact.html">Socials & Support</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-header">
+      <div class="container">
+        <div class="glitch-text">
+          <h1>TOURNAMENTS</h1>
+        </div>
+      </div>
+    </section>
+
+    <section class="tournament-tabs">
+      <div class="container">
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="upcoming">Upcoming Tournaments</button>
+          <button class="tab-btn" data-tab="ongoing">Ongoing Tournaments</button>
+          <button class="tab-btn" data-tab="past">Past Tournaments</button>
+        </div>
+
+        <div class="tab-content active" id="upcoming-content">
+          <div class="tournament-list" id="upcoming-tournaments">
+            <!-- Tournament items will be loaded here dynamically -->
+          </div>
+        </div>
+
+        <div class="tab-content" id="ongoing-content">
+          <div class="tournament-list" id="ongoing-tournaments">
+            <!-- Tournament items will be loaded here dynamically -->
+          </div>
+        </div>
+
+        <div class="tab-content" id="past-content">
+          <div class="tournament-list" id="past-tournaments">
+            <!-- Tournament items will be loaded here dynamically -->
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-glow"></div>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-logo">
+          <img src="assets/logo.svg" alt="Nexus Gaming">
+          <h3>NEXUS <span class="highlight">GAMING</span></h3>
+        </div>
+        <div class="footer-links">
+          <div class="footer-section">
+            <h4>Quick Links</h4>
+            <ul>
+              <li><a href="index.html">Home</a></li>
+              <li><a href="tournaments.html">Tournaments</a></li>
+              <li><a href="contact.html">Contact</a></li>
+            </ul>
+          </div>
+          <div class="footer-section">
+            <h4>Follow Us</h4>
+            <div class="social-icons">
+              <a href="#"><i class="fab fa-twitter"></i></a>
+              <a href="#"><i class="fab fa-instagram"></i></a>
+              <a href="#"><i class="fab fa-youtube"></i></a>
+              <a href="#"><i class="fab fa-discord"></i></a>
+              <a href="#"><i class="fab fa-twitch"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2023 Nexus Gaming. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="scripts/tournaments.js"></script>
+  <script src="scripts/main.js"></script>
+</body>
+</html>
+  
