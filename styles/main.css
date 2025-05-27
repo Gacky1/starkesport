@@ -848,7 +848,8 @@ header .container {
   color: var(--text-color);
 }
 
-.tournament-action-btn {
+.tournament-action-btn,
+.featured-action-btn  {
   display: inline-block;
   margin-top: 15px;
   padding: 12px 24px;
@@ -857,9 +858,17 @@ header .container {
   font-weight: 600;
 }
 
-.tournament-action-btn i {
+.tournament-action-btn i,
+.featured-action-btn i {
   margin-left: 8px;
-} 
+}
+
+.featured-btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}  
 
 /* Socials Section */
 .socials {
@@ -1207,4 +1216,3 @@ footer {
     padding: 10px 20px;
     font-size: 0.9rem;
   }
-}

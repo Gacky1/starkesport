@@ -747,16 +747,10 @@ function  addSampleData() {
   if (!localStorage.getItem('contactMessages')) {
     const sampleMessages = [
       {
-        name: "John Smith",
-        email: "john@example.com",
-        message: "I'm interested in participating in the upcoming Apex Legends tournament. Could you provide more information about registration?",
+        name: "Duggu",
+        email: "DUggu@khiladiadda,com",
+        message: "This website is created by me",
         date: new Date(Date.now() - 86400000).toISOString() // 1 day ago
-      },
-      {
-        name: "Sara Johnson",
-        email: "sara@example.com",
-        message: "Great organization! I attended the last Valorant tournament and it was amazing. Looking forward to the next one.",
-        date: new Date(Date.now() - 172800000).toISOString() // 2 days ago
       }
     ];
     
