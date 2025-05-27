@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded',  function() {
       });
     });
     
-    supportForm.addEventListener('submit', function(e) {
+    supportForm.addEventListener('submit', async function(e) {
       e.preventDefault();
       
       // Add submission animation
@@ -50,33 +50,35 @@ document.addEventListener('DOMContentLoaded',  function() {
         return;
       }
       
-      // In a real application, this would send data to a server
-      // For demonstration, we'll just store in localStorage
-      const contactMessages = JSON.parse(localStorage.getItem('contactMessages')) || [];
-      contactMessages.push({
-        name,
-        email,
-        message,
-        date: new Date().toISOString()
-      });
-      
-      localStorage.setItem('contactMessages', JSON.stringify(contactMessages));
-      
-      // Simulate server processing
-      setTimeout(() => {
-        // Show success message
-        showMessage('Your message has been sent successfully! We will get back to you soon.', 'success');
+      try {
+        // Send message to Google Sheets
+        const result = await addMessage({
+          name,
+          email,
+          message,
+          date: new Date().toISOString()
+        });
         
-        // Reset form
-        supportForm.reset();
-        
+        if (result.success) {
+          // Show success message
+          showMessage('Your message has been sent successfully! We will get back to you soon.', 'success');
+          
+          // Reset form
+          supportForm.reset();
+        } else {
+          throw new Error('Failed to send message');
+        }
+      } catch (error) {
+        console.error('Error sending message:', error);
+        showMessage('Error sending your message. Please try again later.', 'error');
+      } finally {
         // Remove submission animation
         this.classList.remove('submitting');
         
         inputs.forEach(input => {
           input.parentElement.classList.remove('input-focus');
         });
-      }, 1000);
+      }
     });
   }
   

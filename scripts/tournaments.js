@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded',  function() {
+document.addEventListener('DOMContentLoaded',  async function() {
   // Tab functionality
   const tabButtons = document.querySelectorAll('.tab-btn');
   const tabContents = document.querySelectorAll('.tab-content');
@@ -26,43 +26,59 @@ document.addEventListener('DOMContentLoaded',  function() {
   });
   
   // Load tournaments data
-  loadTournaments();
+  await loadTournaments();
   
   // Add noise effect to background
   addNoiseEffect();
 });
 
-// Load tournaments from localStorage
-function loadTournaments() {
+// Load tournaments from Google Sheets
+async function loadTournaments() {
   const upcomingTournaments = document.getElementById('upcoming-tournaments');
   const ongoingTournaments = document.getElementById('ongoing-tournaments');
   const pastTournaments = document.getElementById('past-tournaments');
   
-  // Clear existing content
-  upcomingTournaments.innerHTML = '';
-  ongoingTournaments.innerHTML = '';
-  pastTournaments.innerHTML = '';
+  if (!upcomingTournaments || !ongoingTournaments || !pastTournaments) {
+    return;
+  }
   
-  // Get tournaments from localStorage
-  let tournaments = JSON.parse(localStorage.getItem('tournaments')) || [];
-  
-  // Filter tournaments by status
-  const upcoming = tournaments.filter(tournament => tournament.status === 'upcoming');
-  const ongoing = tournaments.filter(tournament => tournament.status === 'ongoing');
-  const past = tournaments.filter(tournament => tournament.status === 'past');
-  
-  // Display tournaments
-  displayTournaments(upcomingTournaments, upcoming);
-  displayTournaments(ongoingTournaments, ongoing);
-  displayTournaments(pastTournaments, past, true);
-  
-  // Display message if no tournaments found
-  if (upcoming.length === 0) upcomingTournaments.innerHTML = '<div class="no-data">No upcoming tournaments available.</div>';
-  if (ongoing.length === 0) ongoingTournaments.innerHTML = '<div class="no-data">No ongoing tournaments available.</div>';
-  if (past.length === 0) pastTournaments.innerHTML = '<div class="no-data">No past tournaments available.</div>';
+  try {
+    // Show loading state
+    upcomingTournaments.innerHTML = '<div class="loading-spinner"></div>';
+    ongoingTournaments.innerHTML = '<div class="loading-spinner"></div>';
+    pastTournaments.innerHTML = '<div class="loading-spinner"></div>';
+    
+    // Get tournaments from Google Sheets
+    const tournaments = await fetchTournaments();
+    
+    // Clear loading state
+    upcomingTournaments.innerHTML = '';
+    ongoingTournaments.innerHTML = '';
+    pastTournaments.innerHTML = '';
+    
+    // Filter tournaments by status
+    const upcoming = tournaments.filter(tournament => tournament.status === 'upcoming');
+    const ongoing = tournaments.filter(tournament => tournament.status === 'ongoing');
+    const past = tournaments.filter(tournament => tournament.status === 'past');
+    
+    // Display tournaments
+    displayTournaments(upcomingTournaments, upcoming);
+    displayTournaments(ongoingTournaments, ongoing);
+    displayTournaments(pastTournaments, past, true);
+    
+    // Display message if no tournaments found
+    if (upcoming.length === 0) upcomingTournaments.innerHTML = '<div class="no-data">No upcoming tournaments available.</div>';
+    if (ongoing.length === 0) ongoingTournaments.innerHTML = '<div class="no-data">No ongoing tournaments available.</div>';
+    if (past.length === 0) pastTournaments.innerHTML = '<div class="no-data">No past tournaments available.</div>';
+  } catch (error) {
+    console.error('Error loading tournaments:', error);
+    upcomingTournaments.innerHTML = '<div class="error-message">Failed to load tournaments. Please try again later.</div>';
+    ongoingTournaments.innerHTML = '<div class="error-message">Failed to load tournaments. Please try again later.</div>';
+    pastTournaments.innerHTML = '<div class="error-message">Failed to load tournaments. Please try again later.</div>';
+  }
 }
 
-function  displayTournaments(container, tournaments, showWinners = false) {
+function displayTournaments(container, tournaments, showWinners = false) {
   tournaments.forEach(tournament => {
     const tournamentElement = document.createElement('div');
     tournamentElement.className = 'tournament-item';
@@ -135,7 +151,6 @@ function  displayTournaments(container, tournaments, showWinners = false) {
     container.appendChild(tournamentElement);
   });
 }
- 
 
 function formatDate(dateString) {
   const options = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -155,49 +170,4 @@ function addNoiseEffect() {
   
   setInterval(toggleNoise, 1000 / fps);
 }
-
-// Add sample data if tournaments don't exist yet
-function  addSampleData() {
-  if (!localStorage.getItem('tournaments')) {
-    const sampleTournaments = [
-      {
-        id: 1,
-        name: "Apex Legends Showdown",
-        date: "2023-06-15",
-        teams: 32,
-        description: "The premier Apex Legends tournament featuring the top 32 teams from around the world competing for a prize pool of $100,000.",
-        status: "upcoming",
-        buttonText: "Register Now",
-        buttonUrl: "https://example.com/register/apex",
-        image: "https://images.unsplash.com/photo-1593305841991-05c297ba4575?ixid=M3w3MjUzNDh8MHwxfHNlYXJjaHwyfHxlc3BvcnRzJTIwZ2FtaW5nJTIwdG91cm5hbWVudCUyMGFyZW5hJTIwY3liZXJwdW5rfGVufDB8fHx8MTc0NzQwNTc1NHww&ixlib=rb-4.1.0&fit=fillmax&h=800&w=1200"
-      },
-      {
-        id: 2,
-        name: "Valorant Champions Tour",
-        date: "2023-05-20",
-        teams: 16,
-        description: "The official Valorant esports tournament featuring 16 teams competing for the championship title and a $50,000 prize.",
-        status: "ongoing",
-        buttonText: "Watch Live",
-        buttonUrl: "https://example.com/watch/valorant",
-        image: "https://images.unsplash.com/photo-1607853202273-797f1c22a38e?ixid=M3w3MjUzNDh8MHwxfHNlYXJjaHwzfHxlc3BvcnRzJTIwZ2FtaW5nJTIwdG91cm5hbWVudCUyMGFyZW5hJTIwY3liZXJwdW5rfGVufDB8fHx8MTc0NzQwNTc1NHww&ixlib=rb-4.1.0&fit=fillmax&h=800&w=1200"
-      }, 
-      {
-        id: 3,
-        name: "League of Legends Championship",
-        date: "2023-04-10",
-        teams: 12,
-        description: "The ultimate LoL tournament showcasing the best teams battling for supremacy and the championship title.",
-        status: "past",
-        image: "https://images.unsplash.com/photo-1557515126-1bf9ada5cb93?ixid=M3w3MjUzNDh8MHwxfHNlYXJjaHwxMHx8ZXNwb3J0cyUyMGdhbWluZyUyMHRvdXJuYW1lbnQlMjBhcmVuYSUyMGN5YmVycHVua3xlbnwwfHx8fDE3NDc0MDU3NTR8MA&ixlib=rb-4.1.0&fit=fillmax&h=800&w=1200",
-        winners: "Team Nexus",
-        highlights: "https://images.unsplash.com/photo-1601042879364-f3947d3f9c16?ixid=M3w3MjUzNDh8MHwxfHNlYXJjaHw0fHxlc3BvcnRzJTIwZ2FtaW5nJTIwdG91cm5hbWVudCUyMGFyZW5hJTIwY3liZXJwdW5rfGVufDB8fHx8MTc0NzQwNTc1NHww&ixlib=rb-4.1.0&fit=fillmax&h=800&w=1200"
-      }
-    ];
-    
-    localStorage.setItem('tournaments', JSON.stringify(sampleTournaments));
-  }
-}
-
-// Initialize sample data
-addSampleData();
+  

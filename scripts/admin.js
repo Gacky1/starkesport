@@ -1,13 +1,13 @@
-document.addEventListener('DOMContentLoaded',  function() {
+document.addEventListener('DOMContentLoaded',  async function() {
   // Check if user is logged in
-  if (localStorage.getItem('loggedIn') !== 'true') {
+  if (!sessionStorage.getItem('loggedIn')) {
     window.location.href = 'login.html';
     return;
   }
   
-  // Set username from localStorage
+  // Set username from sessionStorage
   const usernameElements = document.querySelectorAll('.admin-username');
-  const username = localStorage.getItem('username') || 'Admin';
+  const username = sessionStorage.getItem('username') || 'Admin';
   
   usernameElements.forEach(element => {
     element.textContent = username;
@@ -45,8 +45,8 @@ document.addEventListener('DOMContentLoaded',  function() {
       e.preventDefault();
       
       // Clear login state
-      localStorage.removeItem('loggedIn');
-      localStorage.removeItem('username');
+      sessionStorage.removeItem('loggedIn');
+      sessionStorage.removeItem('username');
       
       // Redirect to login page
       window.location.href = 'login.html';
@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded',  function() {
   const tournamentStatus = document.getElementById('tournament-status');
   const winnersGroup = document.querySelectorAll('.winners-group');
   
-   if (tournamentStatus) {
+  if (tournamentStatus) {
     tournamentStatus.addEventListener('change', function() {
       const isPast = this.value === 'past';
       const buttonGroup = document.querySelectorAll('.button-group');
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded',  function() {
   
   // Tournament form submission
   if (tournamentForm) {
-    tournamentForm.addEventListener('submit', function(e) {
+    tournamentForm.addEventListener('submit', async function(e) {
       e.preventDefault();
       
       const tournamentId = document.getElementById('tournament-id').value;
@@ -156,130 +156,112 @@ document.addEventListener('DOMContentLoaded',  function() {
       const image = document.getElementById('tournament-image').value;
       const winners = document.getElementById('tournament-winners').value;
       const highlights = document.getElementById('tournament-highlights').value;
-      
-      // Get existing tournaments
-      let tournaments = JSON.parse(localStorage.getItem('tournaments')) || [];
-      
-      // Add activity log
-      let activityLog = JSON.parse(localStorage.getItem('activityLog')) || [];
-      const now = new Date();
-      const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const dateString = now.toLocaleDateString();
-      
       const buttonText = document.getElementById('tournament-button-text').value;
       const buttonUrl = document.getElementById('tournament-button-url').value;
       
-      if (tournamentId) {
-        // Edit existing tournament
-        const index = tournaments.findIndex(t => t.id === parseInt(tournamentId));
-        if (index !== -1) {
-          tournaments[index] = {
-            ...tournaments[index],
-            name,
-            date,
-            teams,
-            description,
-            status,
-            image,
-            buttonText: status !== 'past' ? buttonText : '',
-            buttonUrl: status !== 'past' ? buttonUrl : '',
-            winners: status === 'past' ? winners : '',
-            highlights: status === 'past' ? highlights : ''
-          };
-          
-          // Log activity
-          activityLog.unshift({
-            type: 'edit',
-            text: `Tournament updated: ${name}`,
-            time: `Today, ${timeString}`
-          });
-        }
-      } else {
-        // Add new tournament
-        const newId = tournaments.length > 0 ? Math.max(...tournaments.map(t => t.id)) + 1 : 1;
-        tournaments.push({
-          id: newId,
-          name,
-          date,
-          teams,
-          description,
-          status,
-          image,
-          buttonText: status !== 'past' ? buttonText : '',
-          buttonUrl: status !== 'past' ? buttonUrl : '',
-          winners: status === 'past' ? winners : '',
-          highlights: status === 'past' ? highlights : ''
-        });
+      const tournament = {
+        id: tournamentId ? parseInt(tournamentId) : undefined,
+        name,
+        date,
+        teams,
+        description,
+        status,
+        image,
+        buttonText: status !== 'past' ? buttonText : '',
+        buttonUrl: status !== 'past' ? buttonUrl : '',
+        winners: status === 'past' ? winners : '',
+        highlights: status === 'past' ? highlights : ''
+      };
+      
+      // Show loading state
+      const submitBtn = document.querySelector('#tournament-form button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = 'Saving... <i class="fas fa-spinner fa-spin"></i>';
+      
+      try {
+        // Save tournament to Google Sheets
+        const result = tournamentId ? await updateTournament(tournament) : await addTournament(tournament);
         
-        // Log activity
-        activityLog.unshift({
-          type: 'add',
-          text: `New tournament created: ${name}`,
-          time: `Today, ${timeString}`
-        });
+        if (result.success) {
+          // Add activity log
+          await addActivity({
+            type: tournamentId ? 'edit' : 'add',
+            text: tournamentId ? `Tournament updated: ${name}` : `New tournament created: ${name}`,
+            time: `Today, ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+          });
+          
+          // Show success message
+          const formMessage = document.getElementById('form-message');
+          formMessage.textContent = tournamentId ? 'Tournament updated successfully!' : 'Tournament added successfully!';
+          formMessage.className = 'success';
+          formMessage.classList.remove('hidden');
+          
+          setTimeout(() => {
+            formMessage.classList.add('hidden');
+          }, 3000);
+          
+          // Close modal and reload data
+          closeModal(tournamentModal);
+          await loadAdminTournaments();
+          await updateDashboardCounts();
+          await loadActivityLog();
+        } else {
+          throw new Error('Failed to save tournament');
+        }
+      } catch (error) {
+        console.error('Error saving tournament:', error);
+        const formMessage = document.getElementById('form-message');
+        formMessage.textContent = 'Error: Failed to save tournament. Please try again.';
+        formMessage.className = 'error';
+        formMessage.classList.remove('hidden');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Save Tournament <i class="fas fa-save"></i>';
       }
-      
-      // Keep only the latest 10 activities
-      activityLog = activityLog.slice(0, 10);
-      
-      // Save to localStorage
-      localStorage.setItem('tournaments', JSON.stringify(tournaments));
-      localStorage.setItem('activityLog', JSON.stringify(activityLog));
-      
-      // Close modal and reload data
-      closeModal(tournamentModal);
-      loadAdminTournaments();
-      updateDashboardCounts();
-      loadActivityLog();
     });
   }
   
   // Delete tournament
   if (confirmDeleteBtn) {
-    confirmDeleteBtn.addEventListener('click', function() {
-      const tournamentId = document.getElementById('delete-tournament-id').value;
+    confirmDeleteBtn.addEventListener('click', async function() {
+      const tournamentId = parseInt(document.getElementById('delete-tournament-id').value);
+      const tournamentName = document.getElementById('delete-tournament-name').textContent;
       
-      // Get existing tournaments
-      let tournaments = JSON.parse(localStorage.getItem('tournaments')) || [];
-      
-      // Find tournament name before deleting
-      const tournament = tournaments.find(t => t.id === parseInt(tournamentId));
-      const tournamentName = tournament ? tournament.name : 'Unknown tournament';
-      
-      // Remove tournament with matching id
-      tournaments = tournaments.filter(t => t.id !== parseInt(tournamentId));
-      
-      // Log activity
-      let activityLog = JSON.parse(localStorage.getItem('activityLog')) || [];
-      const now = new Date();
-      const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      
-      activityLog.unshift({
-        type: 'delete',
-        text: `Tournament deleted: ${tournamentName}`,
-        time: `Today, ${timeString}`
-      });
-      
-      // Keep only the latest 10 activities
-      activityLog = activityLog.slice(0, 10);
-      
-      // Save to localStorage
-      localStorage.setItem('tournaments', JSON.stringify(tournaments));
-      localStorage.setItem('activityLog', JSON.stringify(activityLog));
-      
-      // Close modal and reload data
-      closeModal(deleteModal);
-      loadAdminTournaments();
-      updateDashboardCounts();
-      loadActivityLog();
+      try {
+        // Delete tournament from Google Sheets
+        const result = await deleteTournament(tournamentId);
+        
+        if (result.success) {
+          // Add activity log
+          await addActivity({
+            type: 'delete',
+            text: `Tournament deleted: ${tournamentName}`,
+            time: `Today, ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+          });
+          
+          // Close modal and reload data
+          closeModal(deleteModal);
+          await loadAdminTournaments();
+          await updateDashboardCounts();
+          await loadActivityLog();
+        } else {
+          throw new Error('Failed to delete tournament');
+        }
+      } catch (error) {
+        console.error('Error deleting tournament:', error);
+        alert('Error: Failed to delete tournament. Please try again.');
+      }
     });
   }
   
+  // Initialize data
+  await loadInitialData();
+  
   // Load admin tournaments
-  loadAdminTournaments();
-  updateDashboardCounts();
-  loadActivityLog();
-  loadContactMessages();
+  await loadAdminTournaments();
+  await updateDashboardCounts();
+  await loadActivityLog();
+  await loadContactMessages();
   
   // Quick action handlers
   const viewMessagesBtn = document.getElementById('view-messages-btn');
@@ -341,7 +323,7 @@ document.addEventListener('DOMContentLoaded',  function() {
         alert('Settings updated successfully!');
         
         // Update username
-        localStorage.setItem('username', adminUsername);
+        sessionStorage.setItem('username', adminUsername);
         
         // Update displayed username
         usernameElements.forEach(element => {
@@ -354,7 +336,7 @@ document.addEventListener('DOMContentLoaded',  function() {
         document.getElementById('confirm-password').value = '';
       } else if (adminUsername !== username) {
         // Just update username
-        localStorage.setItem('username', adminUsername);
+        sessionStorage.setItem('username', adminUsername);
         
         // Update displayed username
         usernameElements.forEach(element => {
@@ -387,7 +369,7 @@ document.addEventListener('DOMContentLoaded',  function() {
     document.body.style.overflow = ''; // Restore scrolling
   }
   
-  function loadAdminTournaments() {
+  async function loadAdminTournaments() {
     const upcomingTournaments = document.getElementById('admin-upcoming-tournaments');
     const ongoingTournaments = document.getElementById('admin-ongoing-tournaments');
     const pastTournaments = document.getElementById('admin-past-tournaments');
@@ -397,23 +379,32 @@ document.addEventListener('DOMContentLoaded',  function() {
     if (ongoingTournaments) ongoingTournaments.innerHTML = '';
     if (pastTournaments) pastTournaments.innerHTML = '';
     
-    // Get tournaments from localStorage
-    let tournaments = JSON.parse(localStorage.getItem('tournaments')) || [];
-    
-    // Filter tournaments by status
-    const upcoming = tournaments.filter(tournament => tournament.status === 'upcoming');
-    const ongoing = tournaments.filter(tournament => tournament.status === 'ongoing');
-    const past = tournaments.filter(tournament => tournament.status === 'past');
-    
-    // Display tournaments
-    if (upcomingTournaments) displayAdminTournaments(upcomingTournaments, upcoming);
-    if (ongoingTournaments) displayAdminTournaments(ongoingTournaments, ongoing);
-    if (pastTournaments) displayAdminTournaments(pastTournaments, past);
-    
-    // Display message if no tournaments found
-    if (upcomingTournaments && upcoming.length === 0) upcomingTournaments.innerHTML = '<p class="no-data">No upcoming tournaments available.</p>';
-    if (ongoingTournaments && ongoing.length === 0) ongoingTournaments.innerHTML = '<p class="no-data">No ongoing tournaments available.</p>';
-    if (pastTournaments && past.length === 0) pastTournaments.innerHTML = '<p class="no-data">No past tournaments available.</p>';
+    try {
+      // Get tournaments from Google Sheets
+      const tournaments = await fetchTournaments();
+      
+      // Filter tournaments by status
+      const upcoming = tournaments.filter(tournament => tournament.status === 'upcoming');
+      const ongoing = tournaments.filter(tournament => tournament.status === 'ongoing');
+      const past = tournaments.filter(tournament => tournament.status === 'past');
+      
+      // Display tournaments
+      if (upcomingTournaments) displayAdminTournaments(upcomingTournaments, upcoming);
+      if (ongoingTournaments) displayAdminTournaments(ongoingTournaments, ongoing);
+      if (pastTournaments) displayAdminTournaments(pastTournaments, past);
+      
+      // Display message if no tournaments found
+      if (upcomingTournaments && upcoming.length === 0) upcomingTournaments.innerHTML = '<p class="no-data">No upcoming tournaments available.</p>';
+      if (ongoingTournaments && ongoing.length === 0) ongoingTournaments.innerHTML = '<p class="no-data">No ongoing tournaments available.</p>';
+      if (pastTournaments && past.length === 0) pastTournaments.innerHTML = '<p class="no-data">No past tournaments available.</p>';
+    } catch (error) {
+      console.error('Error loading admin tournaments:', error);
+      
+      // Display error message
+      if (upcomingTournaments) upcomingTournaments.innerHTML = '<p class="error-message">Failed to load tournaments. Please try again.</p>';
+      if (ongoingTournaments) ongoingTournaments.innerHTML = '<p class="error-message">Failed to load tournaments. Please try again.</p>';
+      if (pastTournaments) pastTournaments.innerHTML = '<p class="error-message">Failed to load tournaments. Please try again.</p>';
+    }
   }
   
   function displayAdminTournaments(container, tournaments) {
@@ -430,7 +421,7 @@ document.addEventListener('DOMContentLoaded',  function() {
           <button class="btn-primary edit-tournament" data-id="${tournament.id}">
             <i class="fas fa-edit"></i> Edit
           </button>
-          <button class="btn-danger delete-tournament" data-id="${tournament.id}">
+          <button class="btn-danger delete-tournament" data-id="${tournament.id}" data-name="${tournament.name}">
             <i class="fas fa-trash"></i> Delete
           </button>
         </div>
@@ -445,127 +436,125 @@ document.addEventListener('DOMContentLoaded',  function() {
     
     editButtons.forEach(button => {
       button.addEventListener('click', function() {
-        const tournamentId = this.getAttribute('data-id');
+        const tournamentId = parseInt(this.getAttribute('data-id'));
         editTournament(tournamentId);
       });
     });
     
     deleteButtons.forEach(button => {
       button.addEventListener('click', function() {
-        const tournamentId = this.getAttribute('data-id');
-        openDeleteModal(tournamentId);
+        const tournamentId = parseInt(this.getAttribute('data-id'));
+        const tournamentName = this.getAttribute('data-name');
+        openDeleteModal(tournamentId, tournamentName);
       });
     });
   }
   
-   function editTournament(id) {
-    // Get tournament data
-    const tournaments = JSON.parse(localStorage.getItem('tournaments')) || [];
-    const tournament = tournaments.find(t => t.id === parseInt(id));
-    
-    if (tournament) {
-      // Set modal title
-      document.getElementById('modal-title').textContent = 'Edit Tournament';
+  async function editTournament(id) {
+    try {
+      // Get tournament data from API
+      const tournaments = await fetchTournaments();
+      const tournament = tournaments.find(t => t.id === id);
       
-      // Fill form with tournament data
-      document.getElementById('tournament-id').value = tournament.id;
-      document.getElementById('tournament-name').value = tournament.name;
-      document.getElementById('tournament-date').value = tournament.date;
-      document.getElementById('tournament-teams').value = tournament.teams;
-      document.getElementById('tournament-description').value = tournament.description;
-      document.getElementById('tournament-status').value = tournament.status;
-      document.getElementById('tournament-image').value = tournament.image;
-      document.getElementById('tournament-winners').value = tournament.winners || '';
-      document.getElementById('tournament-highlights').value = tournament.highlights || '';
-      document.getElementById('tournament-button-text').value = tournament.buttonText || '';
-      document.getElementById('tournament-button-url').value = tournament.buttonUrl || '';
-      
-      // Show/hide winners fields based on status
-      const isPast = tournament.status === 'past';
-      const buttonGroup = document.querySelectorAll('.button-group');
-      
-      winnersGroup.forEach(group => {
-        if (isPast) {
-          group.classList.remove('hidden');
-        } else {
-          group.classList.add('hidden');
-        }
-      });
-      
-      buttonGroup.forEach(group => {
-        if (isPast) {
-          group.classList.add('hidden');
-        } else {
-          group.classList.remove('hidden');
-        }
-      });
-      
-      // Open modal
-      openModal(tournamentModal);
+      if (tournament) {
+        // Set modal title
+        document.getElementById('modal-title').textContent = 'Edit Tournament';
+        
+        // Fill form with tournament data
+        document.getElementById('tournament-id').value = tournament.id;
+        document.getElementById('tournament-name').value = tournament.name;
+        document.getElementById('tournament-date').value = tournament.date;
+        document.getElementById('tournament-teams').value = tournament.teams;
+        document.getElementById('tournament-description').value = tournament.description;
+        document.getElementById('tournament-status').value = tournament.status;
+        document.getElementById('tournament-image').value = tournament.image;
+        document.getElementById('tournament-winners').value = tournament.winners || '';
+        document.getElementById('tournament-highlights').value = tournament.highlights || '';
+        document.getElementById('tournament-button-text').value = tournament.buttonText || '';
+        document.getElementById('tournament-button-url').value = tournament.buttonUrl || '';
+        
+        // Show/hide winners fields based on status
+        const isPast = tournament.status === 'past';
+        const buttonGroup = document.querySelectorAll('.button-group');
+        
+        winnersGroup.forEach(group => {
+          if (isPast) {
+            group.classList.remove('hidden');
+          } else {
+            group.classList.add('hidden');
+          }
+        });
+        
+        buttonGroup.forEach(group => {
+          if (isPast) {
+            group.classList.add('hidden');
+          } else {
+            group.classList.remove('hidden');
+          }
+        });
+        
+        // Open modal
+        openModal(tournamentModal);
+      }
+    } catch (error) {
+      console.error('Error editing tournament:', error);
+      alert('Error loading tournament data. Please try again.');
     }
   } 
   
-  function openDeleteModal(id) {
+  function openDeleteModal(id, name) {
     document.getElementById('delete-tournament-id').value = id;
+    document.getElementById('delete-tournament-name').textContent = name || 'this tournament';
     openModal(deleteModal);
   }
   
-  function updateDashboardCounts() {
-    const tournaments = JSON.parse(localStorage.getItem('tournaments')) || [];
-    const messages = JSON.parse(localStorage.getItem('contactMessages')) || [];
-    
-    const upcomingCount = tournaments.filter(t => t.status === 'upcoming').length;
-    const ongoingCount = tournaments.filter(t => t.status === 'ongoing').length;
-    const pastCount = tournaments.filter(t => t.status === 'past').length;
-    
-    const upcomingCountElement = document.getElementById('upcoming-count');
-    const ongoingCountElement = document.getElementById('ongoing-count');
-    const pastCountElement = document.getElementById('past-count');
-    const messageCountElement = document.getElementById('message-count');
-    
-    if (upcomingCountElement) upcomingCountElement.textContent = upcomingCount;
-    if (ongoingCountElement) ongoingCountElement.textContent = ongoingCount;
-    if (pastCountElement) pastCountElement.textContent = pastCount;
-    if (messageCountElement) messageCountElement.textContent = messages.length;
+  async function updateDashboardCounts() {
+    try {
+      const tournaments = await fetchTournaments();
+      const messages = await fetchMessages();
+      
+      const upcomingCount = tournaments.filter(t => t.status === 'upcoming').length;
+      const ongoingCount = tournaments.filter(t => t.status === 'ongoing').length;
+      const pastCount = tournaments.filter(t => t.status === 'past').length;
+      
+      const upcomingCountElement = document.getElementById('upcoming-count');
+      const ongoingCountElement = document.getElementById('ongoing-count');
+      const pastCountElement = document.getElementById('past-count');
+      const messageCountElement = document.getElementById('message-count');
+      
+      if (upcomingCountElement) upcomingCountElement.textContent = upcomingCount;
+      if (ongoingCountElement) ongoingCountElement.textContent = ongoingCount;
+      if (pastCountElement) pastCountElement.textContent = pastCount;
+      if (messageCountElement) messageCountElement.textContent = messages.length;
+    } catch (error) {
+      console.error('Error updating dashboard counts:', error);
+    }
   }
   
-  function loadActivityLog() {
+  async function loadActivityLog() {
     const activityList = document.getElementById('activity-list');
     
     if (!activityList) return;
     
-    // Clear existing content
-    activityList.innerHTML = '';
-    
-    // Get activity log from localStorage
-    const activityLog = JSON.parse(localStorage.getItem('activityLog')) || [];
-    
-    // If no activities, add sample activities
-    if (activityLog.length === 0) {
-      const sampleActivities = [
-        {
-          type: 'add',
-          text: 'New tournament created: Apex Legends Showdown',
-          time: 'Today, 10:23 AM'
-        },
-        {
-          type: 'edit',
-          text: 'Tournament updated: Valorant Champions Tour',
-          time: 'Yesterday, 3:45 PM'
-        }
-      ];
+    try {
+      // Clear existing content
+      activityList.innerHTML = '';
       
-      localStorage.setItem('activityLog', JSON.stringify(sampleActivities));
+      // Get activity log from Google Sheets
+      const activityLog = await fetchActivityLog();
       
-      // Display sample activities
-      sampleActivities.forEach(activity => {
-        displayActivity(activityList, activity);
-      });
-    } else {
-      // Display actual activities
+      if (activityLog.length === 0) {
+        activityList.innerHTML = '<p class="no-data">No activities recorded yet.</p>';
+        return;
+      }
+      
+      // Display activities
       activityLog.forEach(activity => {
         displayActivity(activityList, activity);
       });
+    } catch (error) {
+      console.error('Error loading activity log:', error);
+      activityList.innerHTML = '<p class="error-message">Failed to load activities. Please try again.</p>';
     }
   }
   
@@ -594,166 +583,97 @@ document.addEventListener('DOMContentLoaded',  function() {
     container.appendChild(activityElement);
   }
   
-  function loadContactMessages() {
+  async function loadContactMessages() {
     const messagesList = document.getElementById('messages-list');
     
     if (!messagesList) return;
     
-    // Clear existing content
-    messagesList.innerHTML = '';
-    
-    // Get messages from localStorage
-    const messages = JSON.parse(localStorage.getItem('contactMessages')) || [];
-    
-    // If no messages, show message
-    if (messages.length === 0) {
-      messagesList.innerHTML = '<p class="no-data">No messages received yet.</p>';
-      return;
-    }
-    
-    // Display messages
-    messages.forEach((message, index) => {
-      const messageElement = document.createElement('div');
-      messageElement.className = 'message-item';
+    try {
+      // Clear existing content
+      messagesList.innerHTML = '';
       
-      const date = new Date(message.date);
-      const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      // Get messages from Google Sheets
+      const messages = await fetchMessages();
       
-      messageElement.innerHTML = `
-        <div class="message-header">
-          <div class="message-info">
-            <h4>${message.name}</h4>
-            <p>${message.email}</p>
+      // If no messages, show message
+      if (messages.length === 0) {
+        messagesList.innerHTML = '<p class="no-data">No messages received yet.</p>';
+        return;
+      }
+      
+      // Display messages
+      messages.forEach((message) => {
+        const messageElement = document.createElement('div');
+        messageElement.className = 'message-item';
+        
+        const date = new Date(message.date);
+        const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        messageElement.innerHTML = `
+          <div class="message-header">
+            <div class="message-info">
+              <h4>${message.name}</h4>
+              <p>${message.email}</p>
+            </div>
+            <div class="message-date">${formattedDate}</div>
           </div>
-          <div class="message-date">${formattedDate}</div>
-        </div>
-        <div class="message-content">
-          ${message.message}
-        </div>
-        <div class="message-actions">
-          <button class="btn-secondary message-reply" data-index="${index}">
-            <i class="fas fa-reply"></i> Reply
-          </button>
-          <button class="btn-danger message-delete" data-index="${index}">
-            <i class="fas fa-trash"></i> Delete
-          </button>
-        </div>
-      `;
+          <div class="message-content">
+            ${message.message}
+          </div>
+          <div class="message-actions">
+            <button class="btn-secondary message-reply" data-email="${message.email}">
+              <i class="fas fa-reply"></i> Reply
+            </button>
+            <button class="btn-danger message-delete" data-id="${message.id}">
+              <i class="fas fa-trash"></i> Delete
+            </button>
+          </div>
+        `;
+        
+        messagesList.appendChild(messageElement);
+      });
       
-      messagesList.appendChild(messageElement);
-    });
-    
-    // Add event listeners to reply and delete buttons
-    const replyButtons = messagesList.querySelectorAll('.message-reply');
-    const deleteButtons = messagesList.querySelectorAll('.message-delete');
-    
-    replyButtons.forEach(button => {
-      button.addEventListener('click', function() {
-        const index = this.getAttribute('data-index');
-        const message = messages[index];
-        
-        // In a real application, this would open a reply form
-        alert(`Reply to ${message.name} at ${message.email}\n\nOriginal message: ${message.message}`);
-      });
-    });
-    
-    deleteButtons.forEach(button => {
-      button.addEventListener('click', function() {
-        const index = this.getAttribute('data-index');
-        
-        if (confirm('Are you sure you want to delete this message?')) {
-          // Remove message
-          messages.splice(index, 1);
+      // Add event listeners to reply and delete buttons
+      const replyButtons = messagesList.querySelectorAll('.message-reply');
+      const deleteButtons = messagesList.querySelectorAll('.message-delete');
+      
+      replyButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          const email = this.getAttribute('data-email');
           
-          // Save to localStorage
-          localStorage.setItem('contactMessages', JSON.stringify(messages));
-          
-          // Reload messages
-          loadContactMessages();
-          updateDashboardCounts();
-        }
+          // In a real application, this would open a reply form
+          window.open(`mailto:${email}`, '_blank');
+        });
       });
-    });
+      
+      deleteButtons.forEach(button => {
+        button.addEventListener('click', async function() {
+          const messageId = parseInt(this.getAttribute('data-id'));
+          
+          if (confirm('Are you sure you want to delete this message?')) {
+            try {
+              // Delete message from Google Sheets
+              await deleteMessage(messageId);
+              
+              // Reload messages
+              await loadContactMessages();
+              await updateDashboardCounts();
+            } catch (error) {
+              console.error('Error deleting message:', error);
+              alert('Failed to delete message. Please try again.');
+            }
+          }
+        });
+      });
+    } catch (error) {
+      console.error('Error loading contact messages:', error);
+      messagesList.innerHTML = '<p class="error-message">Failed to load messages. Please try again.</p>';
+    }
   }
   
   function formatDate(dateString) {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   }
-  
-  // Add sample data if not exists
-  addSampleData();
 });
-
-// Add sample data if not exists
-function  addSampleData() {
-  if (!localStorage.getItem('tournaments')) {
-    const sampleTournaments = [
-      {
-        id: 1,
-        name: "Apex Legends Showdown",
-        date: "2023-06-15",
-        teams: 32,
-        description: "The premier Apex Legends tournament featuring the top 32 teams from around the world competing for a prize pool of $100,000.",
-        status: "upcoming",
-        buttonText: "Register Now",
-        buttonUrl: "https://example.com/register/apex",
-        image: "https://images.unsplash.com/photo-1593305841991-05c297ba4575?ixid=M3w3MjUzNDh8MHwxfHNlYXJjaHwyfHxlc3BvcnRzJTIwZ2FtaW5nJTIwdG91cm5hbWVudCUyMGFyZW5hJTIwY3liZXJwdW5rfGVufDB8fHx8MTc0NzQwNTc1NHww&ixlib=rb-4.1.0&fit=fillmax&h=800&w=1200"
-      },
-      {
-        id: 2,
-        name: "Valorant Champions Tour",
-        date: "2023-05-20",
-        teams: 16,
-        description: "The official Valorant esports tournament featuring 16 teams competing for the championship title and a $50,000 prize.",
-        status: "ongoing",
-        buttonText: "Watch Live",
-        buttonUrl: "https://example.com/watch/valorant",
-        image: "https://images.unsplash.com/photo-1607853202273-797f1c22a38e?ixid=M3w3MjUzNDh8MHwxfHNlYXJjaHwzfHxlc3BvcnRzJTIwZ2FtaW5nJTIwdG91cm5hbWVudCUyMGFyZW5hJTIwY3liZXJwdW5rfGVufDB8fHx8MTc0NzQwNTc1NHww&ixlib=rb-4.1.0&fit=fillmax&h=800&w=1200"
-      }, 
-      {
-        id: 3,
-        name: "League of Legends Championship",
-        date: "2023-04-10",
-        teams: 12,
-        description: "The ultimate LoL tournament showcasing the best teams battling for supremacy and the championship title.",
-        status: "past",
-        image: "https://images.unsplash.com/photo-1557515126-1bf9ada5cb93?ixid=M3w3MjUzNDh8MHwxfHNlYXJjaHwxMHx8ZXNwb3J0cyUyMGdhbWluZyUyMHRvdXJuYW1lbnQlMjBhcmVuYSUyMGN5YmVycHVua3xlbnwwfHx8fDE3NDc0MDU3NTR8MA&ixlib=rb-4.1.0&fit=fillmax&h=800&w=1200",
-        winners: "Team Nexus",
-        highlights: "https://images.unsplash.com/photo-1601042879364-f3947d3f9c16?ixid=M3w3MjUzNDh8MHwxfHNlYXJjaHw0fHxlc3BvcnRzJTIwZ2FtaW5nJTIwdG91cm5hbWVudCUyMGFyZW5hJTIwY3liZXJwdW5rfGVufDB8fHx8MTc0NzQwNTc1NHww&ixlib=rb-4.1.0&fit=fillmax&h=800&w=1200"
-      }
-    ];
-    
-    localStorage.setItem('tournaments', JSON.stringify(sampleTournaments));
-  }
   
-  if (!localStorage.getItem('activityLog')) {
-    const sampleActivities = [
-      {
-        type: 'add',
-        text: 'New tournament created: Apex Legends Showdown',
-        time: 'Today, 10:23 AM'
-      },
-      {
-        type: 'edit',
-        text: 'Tournament updated: Valorant Champions Tour',
-        time: 'Yesterday, 3:45 PM'
-      }
-    ];
-    
-    localStorage.setItem('activityLog', JSON.stringify(sampleActivities));
-  }
-  
-  if (!localStorage.getItem('contactMessages')) {
-    const sampleMessages = [
-      {
-        name: "Duggu",
-        email: "DUggu@khiladiadda,com",
-        message: "This website is created by me",
-        date: new Date(Date.now() - 86400000).toISOString() // 1 day ago
-      }
-    ];
-    
-    localStorage.setItem('contactMessages', JSON.stringify(sampleMessages));
-  }
-}

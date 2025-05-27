@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded',   function() {
+document.addEventListener('DOMContentLoaded',  async function() {
   // Mobile menu toggle
   const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
   const navLinks = document.querySelector('.nav-links');
@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded',   function() {
   addNoiseEffect();
 
   // Load featured tournaments on homepage
-  loadFeaturedTournaments();
+  await loadFeaturedTournaments();
 });
 
 function addNoiseEffect() {
@@ -64,55 +64,60 @@ function addNoiseEffect() {
 }
 
 // Load featured tournaments on homepage
-function loadFeaturedTournaments() {
+async function loadFeaturedTournaments() {
   const tournamentCardsContainer = document.querySelector('.tournament-cards');
   if (!tournamentCardsContainer) return; // Only run on homepage
 
-  // Get tournaments from localStorage
-  let tournaments = JSON.parse(localStorage.getItem('tournaments')) || [];
-  
-  // Get up to 1 upcoming and 1 ongoing tournament for featured section
-  const upcomingTournament = tournaments.find(t => t.status === 'upcoming');
-  const ongoingTournament = tournaments.find(t => t.status === 'ongoing');
-  
-  // Clear existing content
-  tournamentCardsContainer.innerHTML = '';
-  
-  // Add tournaments to the featured section
-  if (upcomingTournament) {
-    addFeaturedTournamentCard(tournamentCardsContainer, upcomingTournament);
-  }
-  
-  if (ongoingTournament) {
-    addFeaturedTournamentCard(tournamentCardsContainer, ongoingTournament);
-  }
-  
-  // If no tournaments found, add default cards
-  if (!upcomingTournament && !ongoingTournament) {
-    tournamentCardsContainer.innerHTML = `
-      <div class="tournament-card">
-        <div class="tournament-image">
-          <img src="https://images.unsplash.com/photo-1593305841991-05c297ba4575?ixid=M3w3MjUzNDh8MHwxfHNlYXJjaHwyfHxlc3BvcnRzJTIwZ2FtaW5nJTIwdG91cm5hbWVudCUyMGFyZW5hJTIwY3liZXJwdW5rfGVufDB8fHx8MTc0NzQwNTc1NHww&ixlib=rb-4.1.0&fit=fillmax&h=800&w=1200" alt="Esports Arena">
-          <div class="tournament-status upcoming">Upcoming</div>
+  try {
+    // Get tournaments from Google Sheets
+    const tournaments = await fetchTournaments();
+    
+    // Get up to 1 upcoming and 1 ongoing tournament for featured section
+    const upcomingTournament = tournaments.find(t => t.status === 'upcoming');
+    const ongoingTournament = tournaments.find(t => t.status === 'ongoing');
+    
+    // Clear existing content
+    tournamentCardsContainer.innerHTML = '';
+    
+    // Add tournaments to the featured section
+    if (upcomingTournament) {
+      addFeaturedTournamentCard(tournamentCardsContainer, upcomingTournament);
+    }
+    
+    if (ongoingTournament) {
+      addFeaturedTournamentCard(tournamentCardsContainer, ongoingTournament);
+    }
+    
+    // If no tournaments found, add default cards
+    if (!upcomingTournament && !ongoingTournament) {
+      tournamentCardsContainer.innerHTML = `
+        <div class="tournament-card">
+          <div class="tournament-image">
+            <img src="https://images.unsplash.com/photo-1593305841991-05c297ba4575?ixid=M3w3MjUzNDh8MHwxfHNlYXJjaHwyfHxlc3BvcnRzJTIwZ2FtaW5nJTIwdG91cm5hbWVudCUyMGFyZW5hJTIwY3liZXJwdW5rfGVufDB8fHx8MTc0NzQwNTc1NHww&ixlib=rb-4.1.0&fit=fillmax&h=800&w=1200" alt="Esports Arena">
+            <div class="tournament-status upcoming">Upcoming</div>
+          </div>
+          <div class="tournament-info">
+            <h3>No Upcoming Tournaments</h3>
+            <p>Check back soon!</p>
+            <a href="tournaments.html" class="btn-secondary">View Tournaments <i class="fas fa-chevron-right"></i></a>
+          </div>
         </div>
-        <div class="tournament-info">
-          <h3>No Upcoming Tournaments</h3>
-          <p>Check back soon!</p>
-          <a href="tournaments.html" class="btn-secondary">View Tournaments <i class="fas fa-chevron-right"></i></a>
+        <div class="tournament-card">
+          <div class="tournament-image">
+            <img src="https://images.unsplash.com/photo-1607853202273-797f1c22a38e?ixid=M3w3MjUzNDh8MHwxfHNlYXJjaHwzfHxlc3BvcnRzJTIwZ2FtaW5nJTIwdG91cm5hbWVudCUyMGFyZW5hJTIwY3liZXJwdW5rfGVufDB8fHx8MTc0NzQwNTc1NHww&ixlib=rb-4.1.0&fit=fillmax&h=800&w=1200" alt="Esports Tournament">
+            <div class="tournament-status ongoing">Ongoing</div>
+          </div>
+          <div class="tournament-info">
+            <h3>No Ongoing Tournaments</h3>
+            <p>Check back soon!</p>
+            <a href="tournaments.html" class="btn-secondary">View Tournaments <i class="fas fa-chevron-right"></i></a>
+          </div>
         </div>
-      </div>
-      <div class="tournament-card">
-        <div class="tournament-image">
-          <img src="https://images.unsplash.com/photo-1607853202273-797f1c22a38e?ixid=M3w3MjUzNDh8MHwxfHNlYXJjaHwzfHxlc3BvcnRzJTIwZ2FtaW5nJTIwdG91cm5hbWVudCUyMGFyZW5hJTIwY3liZXJwdW5rfGVufDB8fHx8MTc0NzQwNTc1NHww&ixlib=rb-4.1.0&fit=fillmax&h=800&w=1200" alt="Esports Tournament">
-          <div class="tournament-status ongoing">Ongoing</div>
-        </div>
-        <div class="tournament-info">
-          <h3>No Ongoing Tournaments</h3>
-          <p>Check back soon!</p>
-          <a href="tournaments.html" class="btn-secondary">View Tournaments <i class="fas fa-chevron-right"></i></a>
-        </div>
-      </div>
-    `;
+      `;
+    }
+  } catch (error) {
+    console.error('Error loading featured tournaments:', error);
+    tournamentCardsContainer.innerHTML = '<p class="error-message">Failed to load tournaments. Please try again later.</p>';
   }
 }
 
