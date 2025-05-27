@@ -85,9 +85,11 @@ document.addEventListener('DOMContentLoaded',  function() {
   const tournamentStatus = document.getElementById('tournament-status');
   const winnersGroup = document.querySelectorAll('.winners-group');
   
-  if (tournamentStatus) {
+   if (tournamentStatus) {
     tournamentStatus.addEventListener('change', function() {
       const isPast = this.value === 'past';
+      const buttonGroup = document.querySelectorAll('.button-group');
+      
       winnersGroup.forEach(group => {
         if (isPast) {
           group.classList.remove('hidden');
@@ -95,8 +97,16 @@ document.addEventListener('DOMContentLoaded',  function() {
           group.classList.add('hidden');
         }
       });
+      
+      buttonGroup.forEach(group => {
+        if (isPast) {
+          group.classList.add('hidden');
+        } else {
+          group.classList.remove('hidden');
+        }
+      });
     });
-  }
+  } 
   
   // Open add tournament modal
   addTournamentBtns.forEach(btn => {
@@ -156,6 +166,9 @@ document.addEventListener('DOMContentLoaded',  function() {
       const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const dateString = now.toLocaleDateString();
       
+      const buttonText = document.getElementById('tournament-button-text').value;
+      const buttonUrl = document.getElementById('tournament-button-url').value;
+      
       if (tournamentId) {
         // Edit existing tournament
         const index = tournaments.findIndex(t => t.id === parseInt(tournamentId));
@@ -168,6 +181,8 @@ document.addEventListener('DOMContentLoaded',  function() {
             description,
             status,
             image,
+            buttonText: status !== 'past' ? buttonText : '',
+            buttonUrl: status !== 'past' ? buttonUrl : '',
             winners: status === 'past' ? winners : '',
             highlights: status === 'past' ? highlights : ''
           };
@@ -190,6 +205,8 @@ document.addEventListener('DOMContentLoaded',  function() {
           description,
           status,
           image,
+          buttonText: status !== 'past' ? buttonText : '',
+          buttonUrl: status !== 'past' ? buttonUrl : '',
           winners: status === 'past' ? winners : '',
           highlights: status === 'past' ? highlights : ''
         });
@@ -441,7 +458,7 @@ document.addEventListener('DOMContentLoaded',  function() {
     });
   }
   
-  function editTournament(id) {
+   function editTournament(id) {
     // Get tournament data
     const tournaments = JSON.parse(localStorage.getItem('tournaments')) || [];
     const tournament = tournaments.find(t => t.id === parseInt(id));
@@ -460,9 +477,13 @@ document.addEventListener('DOMContentLoaded',  function() {
       document.getElementById('tournament-image').value = tournament.image;
       document.getElementById('tournament-winners').value = tournament.winners || '';
       document.getElementById('tournament-highlights').value = tournament.highlights || '';
+      document.getElementById('tournament-button-text').value = tournament.buttonText || '';
+      document.getElementById('tournament-button-url').value = tournament.buttonUrl || '';
       
       // Show/hide winners fields based on status
       const isPast = tournament.status === 'past';
+      const buttonGroup = document.querySelectorAll('.button-group');
+      
       winnersGroup.forEach(group => {
         if (isPast) {
           group.classList.remove('hidden');
@@ -471,10 +492,18 @@ document.addEventListener('DOMContentLoaded',  function() {
         }
       });
       
+      buttonGroup.forEach(group => {
+        if (isPast) {
+          group.classList.add('hidden');
+        } else {
+          group.classList.remove('hidden');
+        }
+      });
+      
       // Open modal
       openModal(tournamentModal);
     }
-  }
+  } 
   
   function openDeleteModal(id) {
     document.getElementById('delete-tournament-id').value = id;
@@ -657,7 +686,7 @@ document.addEventListener('DOMContentLoaded',  function() {
 });
 
 // Add sample data if not exists
-function addSampleData() {
+function  addSampleData() {
   if (!localStorage.getItem('tournaments')) {
     const sampleTournaments = [
       {
@@ -667,6 +696,8 @@ function addSampleData() {
         teams: 32,
         description: "The premier Apex Legends tournament featuring the top 32 teams from around the world competing for a prize pool of $100,000.",
         status: "upcoming",
+        buttonText: "Register Now",
+        buttonUrl: "https://example.com/register/apex",
         image: "https://images.unsplash.com/photo-1593305841991-05c297ba4575?ixid=M3w3MjUzNDh8MHwxfHNlYXJjaHwyfHxlc3BvcnRzJTIwZ2FtaW5nJTIwdG91cm5hbWVudCUyMGFyZW5hJTIwY3liZXJwdW5rfGVufDB8fHx8MTc0NzQwNTc1NHww&ixlib=rb-4.1.0&fit=fillmax&h=800&w=1200"
       },
       {
@@ -676,8 +707,10 @@ function addSampleData() {
         teams: 16,
         description: "The official Valorant esports tournament featuring 16 teams competing for the championship title and a $50,000 prize.",
         status: "ongoing",
+        buttonText: "Watch Live",
+        buttonUrl: "https://example.com/watch/valorant",
         image: "https://images.unsplash.com/photo-1607853202273-797f1c22a38e?ixid=M3w3MjUzNDh8MHwxfHNlYXJjaHwzfHxlc3BvcnRzJTIwZ2FtaW5nJTIwdG91cm5hbWVudCUyMGFyZW5hJTIwY3liZXJwdW5rfGVufDB8fHx8MTc0NzQwNTc1NHww&ixlib=rb-4.1.0&fit=fillmax&h=800&w=1200"
-      },
+      }, 
       {
         id: 3,
         name: "League of Legends Championship",
@@ -730,4 +763,3 @@ function addSampleData() {
     localStorage.setItem('contactMessages', JSON.stringify(sampleMessages));
   }
 }
-  

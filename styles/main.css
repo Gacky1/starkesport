@@ -843,10 +843,23 @@ header .container {
   margin-top: 20px;
 }
 
-.tournament-highlights h4 {
+.tournament-highlights  h4 {
   margin-bottom: 10px;
   color: var(--text-color);
 }
+
+.tournament-action-btn {
+  display: inline-block;
+  margin-top: 15px;
+  padding: 12px 24px;
+  text-align: center;
+  transition: var(--transition);
+  font-weight: 600;
+}
+
+.tournament-action-btn i {
+  margin-left: 8px;
+} 
 
 /* Socials Section */
 .socials {
@@ -1195,4 +1208,3 @@ footer {
     font-size: 0.9rem;
   }
 }
-  

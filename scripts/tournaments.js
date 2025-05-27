@@ -62,7 +62,7 @@ function loadTournaments() {
   if (past.length === 0) pastTournaments.innerHTML = '<div class="no-data">No past tournaments available.</div>';
 }
 
-function displayTournaments(container, tournaments, showWinners = false) {
+function  displayTournaments(container, tournaments, showWinners = false) {
   tournaments.forEach(tournament => {
     const tournamentElement = document.createElement('div');
     tournamentElement.className = 'tournament-item';
@@ -100,6 +100,18 @@ function displayTournaments(container, tournaments, showWinners = false) {
       }
     }
     
+    // Action button for upcoming or ongoing tournaments
+    let actionButtonHtml = '';
+    if (tournament.status !== 'past') {
+      const buttonText = tournament.buttonText || (tournament.status === 'upcoming' ? 'Register Now' : 'Watch Live');
+      const buttonUrl = tournament.buttonUrl || '#';
+      actionButtonHtml = `
+        <a href="${buttonUrl}" class="btn-primary tournament-action-btn" target="_blank">
+          ${buttonText} <i class="fas fa-${tournament.status === 'upcoming' ? 'sign-in-alt' : 'play-circle'}"></i>
+        </a>
+      `;
+    }
+    
     tournamentElement.innerHTML = `
       <div class="tournament-image">
         <img src="${tournament.image}" alt="${tournament.name}">
@@ -116,12 +128,14 @@ function displayTournaments(container, tournaments, showWinners = false) {
         </div>
         ${winnersHtml}
         ${highlightsHtml}
+        ${actionButtonHtml}
       </div>
     `;
     
     container.appendChild(tournamentElement);
   });
 }
+ 
 
 function formatDate(dateString) {
   const options = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -143,7 +157,7 @@ function addNoiseEffect() {
 }
 
 // Add sample data if tournaments don't exist yet
-function addSampleData() {
+function  addSampleData() {
   if (!localStorage.getItem('tournaments')) {
     const sampleTournaments = [
       {
@@ -153,6 +167,8 @@ function addSampleData() {
         teams: 32,
         description: "The premier Apex Legends tournament featuring the top 32 teams from around the world competing for a prize pool of $100,000.",
         status: "upcoming",
+        buttonText: "Register Now",
+        buttonUrl: "https://example.com/register/apex",
         image: "https://images.unsplash.com/photo-1593305841991-05c297ba4575?ixid=M3w3MjUzNDh8MHwxfHNlYXJjaHwyfHxlc3BvcnRzJTIwZ2FtaW5nJTIwdG91cm5hbWVudCUyMGFyZW5hJTIwY3liZXJwdW5rfGVufDB8fHx8MTc0NzQwNTc1NHww&ixlib=rb-4.1.0&fit=fillmax&h=800&w=1200"
       },
       {
@@ -162,8 +178,10 @@ function addSampleData() {
         teams: 16,
         description: "The official Valorant esports tournament featuring 16 teams competing for the championship title and a $50,000 prize.",
         status: "ongoing",
+        buttonText: "Watch Live",
+        buttonUrl: "https://example.com/watch/valorant",
         image: "https://images.unsplash.com/photo-1607853202273-797f1c22a38e?ixid=M3w3MjUzNDh8MHwxfHNlYXJjaHwzfHxlc3BvcnRzJTIwZ2FtaW5nJTIwdG91cm5hbWVudCUyMGFyZW5hJTIwY3liZXJwdW5rfGVufDB8fHx8MTc0NzQwNTc1NHww&ixlib=rb-4.1.0&fit=fillmax&h=800&w=1200"
-      },
+      }, 
       {
         id: 3,
         name: "League of Legends Championship",
@@ -183,4 +201,3 @@ function addSampleData() {
 
 // Initialize sample data
 addSampleData();
-  
