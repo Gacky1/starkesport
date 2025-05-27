@@ -1,4 +1,4 @@
-<!DOCTYPE  html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -12,16 +12,400 @@
   <meta property="twitter:title" content="Admin Login - Nexus Gaming">
   <meta property="twitter:description" content="Built with jdoodle.ai - Admin login for Nexus Gaming esports organization.">
   <meta property="twitter:image" content="https://imagedelivery.net/FIZL8110j4px64kO6qJxWA/26ecfcc0jbf76j4b63jaefej78d1929442db/public">
-  <link rel="stylesheet" href="../styles/admin.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="icon" href="../assets/favicon.ico" type="image/x-icon">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0a0a0a;
+      color: #ffffff;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .login-container {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .login-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -2;
+      overflow: hidden;
+    }
+
+    .login-background::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(10, 10, 10, 0.85) 0%, rgba(0, 150, 255, 0.1) 100%);
+      z-index: 1;
+    }
+
+    .login-background img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: blur(2px) brightness(0.3);
+    }
+
+    .login-wrapper {
+      background: rgba(15, 15, 20, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(0, 150, 255, 0.2);
+      border-radius: 20px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      position: relative;
+      animation: slideUp 0.6s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo img {
+      width: 60px;
+      height: 60px;
+      filter: drop-shadow(0 0 10px rgba(0, 150, 255, 0.5));
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .logo h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #ffffff;
+    }
+
+    .logo .highlight {
+      color: #00aaff;
+      text-shadow: 0 0 20px rgba(0, 170, 255, 0.5);
+    }
+
+    .cybr-text {
+      text-align: center;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #00aaff;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 2rem;
+      padding: 0.5rem;
+      border: 1px solid rgba(0, 170, 255, 0.3);
+      border-radius: 8px;
+      background: rgba(0, 170, 255, 0.05);
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from { box-shadow: 0 0 5px rgba(0, 170, 255, 0.2); }
+      to { box-shadow: 0 0 15px rgba(0, 170, 255, 0.4); }
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .form-group label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #b0b0b0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .form-group label i {
+      color: #00aaff;
+      width: 16px;
+    }
+
+    .form-group input {
+      background: rgba(30, 30, 40, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 1rem;
+      font-size: 1rem;
+      color: #ffffff;
+      transition: all 0.3s ease;
+      outline: none;
+    }
+
+    .form-group input:focus {
+      border-color: #00aaff;
+      box-shadow: 0 0 0 3px rgba(0, 170, 255, 0.1);
+      background: rgba(30, 30, 40, 0.95);
+    }
+
+    .form-group input::placeholder {
+      color: #666;
+    }
+
+    .form-actions {
+      margin-top: 1rem;
+    }
+
+    .btn-primary {
+      width: 100%;
+      background: linear-gradient(135deg, #00aaff 0%, #0088cc 100%);
+      border: none;
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #ffffff;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.6s;
+    }
+
+    .btn-primary:hover::before {
+      left: 100%;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0, 170, 255, 0.3);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .back-to-site {
+      text-align: center;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .back-to-site a {
+      color: #888;
+      text-decoration: none;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: color 0.3s ease;
+    }
+
+    .back-to-site a:hover {
+      color: #00aaff;
+    }
+
+    #login-message {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    #login-message.error {
+      background: rgba(220, 53, 69, 0.1);
+      border: 1px solid rgba(220, 53, 69, 0.3);
+      color: #ff6b6b;
+    }
+
+    #login-message.success {
+      background: rgba(40, 167, 69, 0.1);
+      border: 1px solid rgba(40, 167, 69, 0.3);
+      color: #51cf66;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .login-container {
+        padding: 0.5rem;
+      }
+
+      .login-wrapper {
+        padding: 1.5rem;
+        max-width: 100%;
+        margin: 0.5rem;
+      }
+
+      .logo h1 {
+        font-size: 1.5rem;
+      }
+
+      .logo img {
+        width: 50px;
+        height: 50px;
+      }
+
+      .cybr-text {
+        font-size: 0.8rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .form-group input {
+        padding: 0.875rem;
+        font-size: 16px; /* Prevents zoom on iOS */
+      }
+
+      .btn-primary {
+        padding: 0.875rem 1.25rem;
+        font-size: 0.9rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .login-container {
+        padding: 0.25rem;
+      }
+
+      .login-wrapper {
+        padding: 1.25rem;
+        border-radius: 16px;
+      }
+
+      .logo h1 {
+        font-size: 1.3rem;
+        letter-spacing: 1px;
+      }
+
+      .form-group input {
+        padding: 0.75rem;
+      }
+
+      .btn-primary {
+        padding: 0.75rem 1rem;
+      }
+    }
+
+    @media (max-height: 600px) and (orientation: landscape) {
+      .login-container {
+        align-items: flex-start;
+        padding-top: 1rem;
+      }
+
+      .login-wrapper {
+        margin: 1rem 0;
+      }
+
+      .login-header {
+        margin-bottom: 1rem;
+      }
+
+      .logo img {
+        width: 40px;
+        height: 40px;
+      }
+
+      .logo h1 {
+        font-size: 1.2rem;
+      }
+    }
+
+    /* High DPI displays */
+    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+      .login-background img {
+        image-rendering: -webkit-optimize-contrast;
+      }
+    }
+
+    /* Accessibility improvements */
+    @media (prefers-reduced-motion: reduce) {
+      .login-wrapper,
+      .logo img,
+      .cybr-text,
+      .btn-primary::before {
+        animation: none;
+      }
+    }
+
+    /* Dark mode support (already implemented) */
+    @media (prefers-color-scheme: light) {
+      /* Keep dark theme as it's part of the gaming aesthetic */
+    }
+  </style>
 </head>
 <body class="dark-theme login-page">
   <div class="login-container">
     <div class="login-wrapper">
       <div class="login-header">
         <div class="logo">
-          <img src="../assets/logo.svg" alt="Nexus Gaming">
+          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='none' stroke='%2300aaff' stroke-width='3'/%3E%3Cpolygon points='30,35 70,50 30,65' fill='%2300aaff'/%3E%3C/svg%3E" alt="Nexus Gaming">
           <h1>NEXUS <span class="highlight">ADMIN</span></h1>
         </div>
       </div>
@@ -34,14 +418,14 @@
             <label for="username">
               <i class="fas fa-user"></i> Username
             </label>
-            <input type="text" id="username" name="username" required autocomplete="off">
+            <input type="text" id="username" name="username" required autocomplete="username" placeholder="Enter your username">
           </div>
           
           <div class="form-group">
             <label for="password">
               <i class="fas fa-lock"></i> Password
             </label>
-            <input type="password" id="password" name="password" required>
+            <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="Enter your password">
           </div>
           
           <div class="form-actions">
@@ -63,11 +447,10 @@
     </div>
     
     <div class="login-background">
-      <img src="https://images.unsplash.com/photo-1561344640-2453889cde5b?ixid=M3w3MjUzNDh8MHwxfHNlYXJjaHwxfHxlc3BvcnRzJTIwZ2FtaW5nJTIwdG91cm5hbWVudCUyMGFyZW5hJTIwY3liZXJwdW5rfGVufDB8fHx8MTc0NzQwNTc1NHww&ixlib=rb-4.1.0&fit=fillmax&h=800&w=1200" alt="Esports Arena">
+      <img src="https://images.unsplash.com/photo-1561344640-2453889cde5b?ixid=M3w3MjUzNDh8MHwxfHNlYXJjaHwxfHxlc3BvcnRzJTIwZ2FtaW5nJTIwdG91cm5hbWVudCUyMGFyZW5hJTIwY3liZXJwdW5rfGVufDB8fHx8MTc0NzQwNTc1NHww&ixlib=rb-4.1.0&fit=fillmax&h=800&w=1200" alt="Esports Arena" loading="lazy">
     </div>
   </div>
 
-  <script src="scripts/login.js"></script>
+  <script src="/admin/scripts/login.js"></script>
 </body>
 </html>
-  
