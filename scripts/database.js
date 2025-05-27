@@ -1,5 +1,5 @@
 //  Database handler using Google Sheets API
-const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbww53Ycap9BXoreVRM36xHjDD4cz4Jq2eR7UF8ttgk618SObqCXvoVWsCqY0GaOTT18/exec';
+const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbxH5JYC2KNsLepcpIcpe2kkl-oq4FX9avWLlQC3CkysFJ623toz2O5yqRl8LZAGWze6/exec';
 
 // Function to fetch data from Google Sheets
 async function fetchData(action) {
