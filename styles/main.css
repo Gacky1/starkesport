@@ -304,7 +304,7 @@ img {
 /* Buttons */
 .btn-primary, .btn-secondary {
   display: inline-block;
-  padding: 12px 24px;
+  padding: 10px 24px;
   border: none;
   border-radius: var(--border-radius);
   font-weight: 600;
