@@ -206,12 +206,12 @@ document.addEventListener('DOMContentLoaded', async function() {
           await updateDashboardCounts();
           await loadActivityLog();
         } else {
-          throw new Error('Failed to save tournament');
+          throw new Error(result.error || 'Failed to save tournament');
         }
       } catch (error) {
         console.error('Error saving tournament:', error);
         const formMessage = document.getElementById('form-message');
-        formMessage.textContent = 'Error: Failed to save tournament. Please try again.';
+        formMessage.textContent = `Error: ${error.message || 'Failed to save tournament. Please try again.'}`;
         formMessage.className = 'error';
         formMessage.classList.remove('hidden');
       } finally {

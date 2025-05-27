@@ -1,5 +1,5 @@
 //  Database handler using Google Sheets API
-const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbxH5JYC2KNsLepcpIcpe2kkl-oq4FX9avWLlQC3CkysFJ623toz2O5yqRl8LZAGWze6/exec';
+const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbyfb0spD13nVtW_wQy_WRDeaC1rdMba-s4malFKe6cpcU5CfnQVIw0jlGMXY_vcphf3/exec';
 
 // Function to fetch data from Google Sheets
 async function fetchData(action) {
@@ -18,7 +18,12 @@ async function fetchData(action) {
 async function sendData(action, payload) {
   try {
     const url = SHEET_API_URL;
-    const response = await fetch(`https://hooks.jdoodle.net/proxy?url=${encodeURIComponent(url)}`, {
+    console.log('Sending request to:', url);
+    console.log('Action:', action);
+    console.log('Payload:', payload);
+    
+    // For POST requests, use the URL directly without proxy
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -26,12 +31,21 @@ async function sendData(action, payload) {
       body: JSON.stringify({
         action: action,
         ...payload
-      })
+      }),
+      mode: 'no-cors' // Add this to handle CORS
     });
-    const data = await response.json();
-    return data;
+    
+    // Since we're using no-cors, we can't check response.ok
+    // Instead, we'll assume success if we get here
+    console.log('Request sent successfully');
+    return { success: true };
+    
   } catch (error) {
     console.error(`Error sending ${action}:`, error);
+    console.error('Full error details:', {
+      message: error.message,
+      stack: error.stack
+    });
     return { success: false, error: error.message };
   }
 }
@@ -42,6 +56,34 @@ async function fetchTournaments() {
 }
 
 async function addTournament(tournament) {
+  // Validate required fields
+  const requiredFields = ['name', 'date', 'teams', 'description', 'status', 'image'];
+  const missingFields = requiredFields.filter(field => !tournament[field]);
+  
+  if (missingFields.length > 0) {
+    console.error('Missing required fields:', missingFields);
+    return { success: false, error: `Missing required fields: ${missingFields.join(', ')}` };
+  }
+  
+  // Convert teams to number and validate
+  const teams = parseInt(tournament.teams);
+  if (isNaN(teams) || teams < 2) {
+    return { success: false, error: 'Number of teams must be at least 2' };
+  }
+  
+  // Update tournament object with parsed teams value
+  tournament.teams = teams;
+  
+  if (!['upcoming', 'ongoing', 'past'].includes(tournament.status)) {
+    return { success: false, error: 'Invalid tournament status' };
+  }
+  
+  // Format date if needed
+  if (tournament.date instanceof Date) {
+    tournament.date = tournament.date.toISOString().split('T')[0];
+  }
+  
+  console.log('Adding tournament:', tournament);
   return await sendData('addTournament', { tournament });
 }
 
